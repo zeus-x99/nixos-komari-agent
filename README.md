@@ -40,4 +40,24 @@ The module stores Komari's persistent traffic data in
 disables Komari self-updates by default because the package lives in the
 immutable Nix store.
 
+## Options
+
+All non-deprecated Komari 1.2.60 settings have typed Nix options:
+
+```text
+endpoint tokenFile autoDiscoveryKeyFile interval disableAutoUpdate
+disableWebSsh ignoreUnsafeCert maxRetries reconnectInterval infoReportInterval
+includeNics excludeNics includeMountpoints monthRotate memoryIncludeCache
+memoryReportRawUsed customDns enableGpu showWarning customIpv4 customIpv6
+getIpAddrFromNic hostProc configFile protocolVersion disableCompression
+preferIpVersion
+```
+
+`tokenFile` and `autoDiscoveryKeyFile` contain raw credentials and are loaded
+through systemd credentials. `hostProc` is exported as `HOST_PROC`, while
+`configFile` points to Komari's JSON configuration file; values in that JSON
+file take precedence over the typed command-line options. `extraArgs` remains
+available for forward compatibility with newer agent versions. The deprecated
+`MemoryModeAvailable` setting is intentionally not exposed.
+
 Run `nix flake check` after adding the input and before switching the system.
