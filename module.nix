@@ -121,12 +121,6 @@ in
       description = "Disable Komari's self-update, which cannot modify the Nix store.";
     };
 
-    enableIcmp = mkOption {
-      type = types.bool;
-      default = false;
-      description = "Allow ICMP echo probes by granting CAP_NET_RAW to the service.";
-    };
-
     disableWebSsh = mkOption {
       type = types.bool;
       default = false;
@@ -340,8 +334,8 @@ in
         Restart = "on-failure";
         RestartSec = "5s";
         UMask = "0077";
-        CapabilityBoundingSet = optional cfg.enableIcmp "CAP_NET_RAW";
-        AmbientCapabilities = optional cfg.enableIcmp "CAP_NET_RAW";
+        CapabilityBoundingSet = [ "CAP_NET_RAW" ];
+        AmbientCapabilities = [ "CAP_NET_RAW" ];
         NoNewPrivileges = true;
         PrivateTmp = true;
         ProtectHome = "read-only";

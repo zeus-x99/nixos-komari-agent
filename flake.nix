@@ -33,7 +33,6 @@
                     autoDiscoveryKeyFile = "/run/secrets/komari-auto-discovery-key";
                     interval = 2.5;
                     disableAutoUpdate = true;
-                    enableIcmp = true;
                     disableWebSsh = true;
                     ignoreUnsafeCert = false;
                     maxRetries = 4;
