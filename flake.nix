@@ -33,6 +33,7 @@
                     autoDiscoveryKeyFile = "/run/secrets/komari-auto-discovery-key";
                     interval = 2.5;
                     disableAutoUpdate = true;
+                    enableIcmp = true;
                     disableWebSsh = true;
                     ignoreUnsafeCert = false;
                     maxRetries = 4;
@@ -63,6 +64,10 @@
             package = nixpkgs.legacyPackages.${system};
           in
           assert evaluated.config.systemd.services.komari-agent.serviceConfig.ExecStart != null;
+          assert builtins.elem "CAP_NET_RAW"
+            evaluated.config.systemd.services.komari-agent.serviceConfig.CapabilityBoundingSet;
+          assert builtins.elem "CAP_NET_RAW"
+            evaluated.config.systemd.services.komari-agent.serviceConfig.AmbientCapabilities;
           package.runCommand "komari-agent-module-check" { } "touch $out";
       });
     };

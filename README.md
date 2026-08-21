@@ -27,6 +27,7 @@ services.komari-agent = {
   enable = true;
   endpoint = "https://komari.example.com";
   tokenFile = config.sops.secrets."komari-agent-token".path;
+  enableIcmp = true;
   disableWebSsh = true;
   extraArgs = [
     "--include-nics"
@@ -45,7 +46,7 @@ immutable Nix store.
 All non-deprecated Komari 1.2.60 settings have typed Nix options:
 
 ```text
-endpoint tokenFile autoDiscoveryKeyFile interval disableAutoUpdate
+endpoint tokenFile autoDiscoveryKeyFile interval disableAutoUpdate enableIcmp
 disableWebSsh ignoreUnsafeCert maxRetries reconnectInterval infoReportInterval
 includeNics excludeNics includeMountpoints monthRotate memoryIncludeCache
 memoryReportRawUsed customDns enableGpu showWarning customIpv4 customIpv6
@@ -58,6 +59,7 @@ through systemd credentials. `hostProc` is exported as `HOST_PROC`, while
 `configFile` points to Komari's JSON configuration file; values in that JSON
 file take precedence over the typed command-line options. `extraArgs` remains
 available for forward compatibility with newer agent versions. The deprecated
-`MemoryModeAvailable` setting is intentionally not exposed.
+`MemoryModeAvailable` setting is intentionally not exposed. `enableIcmp` is
+opt-in because it grants `CAP_NET_RAW` to the service for ICMP echo probes.
 
 Run `nix flake check` after adding the input and before switching the system.
