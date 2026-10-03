@@ -53,6 +53,11 @@ getIpAddrFromNic hostProc configFile protocolVersion disableCompression
 preferIpVersion
 ```
 
+`protocolVersion` defaults to `null`, so the module uses the agent's default
+protocol without passing `--protocol-version`. Current agents such as 1.5.11
+do not accept that flag. Set this option to `1` or `2` only when using an older
+agent package that supports it.
+
 `tokenFile` and `autoDiscoveryKeyFile` contain raw credentials and are loaded
 through systemd credentials. `hostProc` is exported as `HOST_PROC`, while
 `configFile` points to Komari's JSON configuration file; values in that JSON

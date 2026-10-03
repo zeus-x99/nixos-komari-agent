@@ -52,10 +52,9 @@
                     getIpAddrFromNic = true;
                     hostProc = "/host/proc";
                     configFile = "/etc/komari-agent.json";
-                    protocolVersion = 2;
                     disableCompression = true;
                     preferIpVersion = "4";
-                    extraArgs = [ ];
+                    extraArgs = [ "--help" ];
                   };
                 }
               ];
@@ -67,7 +66,15 @@
             evaluated.config.systemd.services.komari-agent.serviceConfig.CapabilityBoundingSet;
           assert builtins.elem "CAP_NET_RAW"
             evaluated.config.systemd.services.komari-agent.serviceConfig.AmbientCapabilities;
-          package.runCommand "komari-agent-module-check" { } "touch $out";
+          package.runCommand "komari-agent-module-check" { } ''
+            export CREDENTIALS_DIRECTORY="$TMPDIR/credentials"
+            mkdir "$CREDENTIALS_DIRECTORY"
+            printf '%s\n' test-token > "$CREDENTIALS_DIRECTORY/token"
+            printf '%s\n' test-discovery-key > "$CREDENTIALS_DIRECTORY/auto-discovery-key"
+            ${evaluated.config.systemd.services.komari-agent.serviceConfig.ExecStart} > agent-help.txt
+            grep -Fq 'komari-agent [flags]' agent-help.txt
+            touch "$out"
+          '';
       });
     };
 }

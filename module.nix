@@ -39,8 +39,6 @@ let
     (toString cfg.infoReportInterval)
     "--month-rotate"
     (toString cfg.monthRotate)
-    "--protocol-version"
-    (toString cfg.protocolVersion)
   ]
   ++ optional cfg.disableAutoUpdate "--disable-auto-update"
   ++ optional cfg.disableWebSsh "--disable-web-ssh"
@@ -58,6 +56,7 @@ let
   ++ optionalArgument "--exclude-nics" cfg.excludeNics
   ++ optionalArgument "--include-mountpoint" cfg.includeMountpoints
   ++ optionalArgument "--config" cfg.configFile
+  ++ optionalArgument "--protocol-version" cfg.protocolVersion
   ++ optionalArgument "--prefer-ip-version" cfg.preferIpVersion
   ++ cfg.extraArgs;
   startScript = pkgs.writeShellScript "komari-agent-start" ''
@@ -239,9 +238,18 @@ in
     };
 
     protocolVersion = mkOption {
-      type = types.int;
-      default = 2;
-      description = "Komari reporting protocol version (1 or 2).";
+      type = types.nullOr (
+        types.enum [
+          1
+          2
+        ]
+      );
+      default = null;
+      description = ''
+        Reporting protocol override for older agents that support
+        --protocol-version. Leave null for current agents such as 1.5.11,
+        which do not accept this flag, to use the agent's default.
+      '';
     };
 
     disableCompression = mkOption {
@@ -301,13 +309,6 @@ in
       {
         assertion = cfg.monthRotate >= 0 && cfg.monthRotate <= 31;
         message = "services.komari-agent.monthRotate must be between 0 and 31.";
-      }
-      {
-        assertion = builtins.elem cfg.protocolVersion [
-          1
-          2
-        ];
-        message = "services.komari-agent.protocolVersion must be 1 or 2.";
       }
     ];
 
