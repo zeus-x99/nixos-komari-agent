@@ -85,14 +85,6 @@ let
   '';
 in
 {
-  imports = [
-    (lib.mkChangedOptionModule
-      [ "services" "komari-agent" "allowPrivilegeEscalation" ]
-      [ "services" "komari-agent" "enableHardening" ]
-      (config: !config.services.komari-agent.allowPrivilegeEscalation)
-    )
-  ];
-
   options.services.komari-agent = {
     enable = mkEnableOption "the Komari monitoring agent";
 

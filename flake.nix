@@ -19,7 +19,7 @@
       };
 
       checks = forAllSystems (system: {
-        option-compatibility = import ./tests/option-compatibility.nix {
+        option-validation = import ./tests/option-validation.nix {
           inherit nixpkgs system;
         };
 

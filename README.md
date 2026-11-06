@@ -77,9 +77,8 @@ existing sudo and PAM policies; this option does not grant sudo rights or
 change passwords. A user with passwordless sudo can obtain root from Komari.
 The relaxed restrictions apply to the whole agent and all its child processes.
 
-The previous `allowPrivilegeEscalation` option is deprecated and still accepted
-with a migration warning. Its value is inverted: `true` becomes
-`enableHardening = false`, and `false` becomes `enableHardening = true`.
+The removed `allowPrivilegeEscalation` option is not accepted; using it fails
+configuration evaluation as an unknown option.
 
 ## Options
 

@@ -24,35 +24,26 @@ let
     }).config;
   unit = config: config.systemd.units."komari-agent.service".text;
   restricted = evaluate { enableHardening = true; };
-  privileged = evaluate { enableHardening = false; };
-  legacyRestricted = evaluate { allowPrivilegeEscalation = false; };
-  legacyPrivileged = evaluate { allowPrivilegeEscalation = true; };
-  conflicting = evaluate {
-    enableHardening = true;
-    allowPrivilegeEscalation = true;
-  };
   anonymous = evaluate {
     user = null;
     enableHardening = false;
   };
-  warnsAboutMigration =
-    config:
-    lib.any (
-      warning: lib.hasInfix "allowPrivilegeEscalation" warning && lib.hasInfix "enableHardening" warning
-    ) config.warnings;
+  rejects =
+    settings: !(builtins.tryEval (evaluate settings).services.komari-agent.enableHardening).success;
 in
 assert unit (evaluate { }) == unit restricted;
-assert unit legacyRestricted == unit restricted;
-assert unit legacyPrivileged == unit privileged;
-assert warnsAboutMigration legacyRestricted;
-assert warnsAboutMigration legacyPrivileged;
-assert !warnsAboutMigration privileged;
-assert !(builtins.tryEval conflicting.services.komari-agent.enableHardening).success;
+assert rejects { allowPrivilegeEscalation = false; };
+assert rejects { allowPrivilegeEscalation = true; };
+assert rejects {
+  allowPrivilegeEscalation = true;
+  enableHardening = false;
+};
+assert rejects { enableHardening = "false"; };
 assert lib.any (
   entry:
   !entry.assertion
   && entry.message == "Disabling services.komari-agent.enableHardening requires an explicit user."
 ) anonymous.assertions;
-pkgs.runCommand "komari-agent-option-compatibility-check" { } ''
+pkgs.runCommand "komari-agent-option-validation-check" { } ''
   touch "$out"
 ''
