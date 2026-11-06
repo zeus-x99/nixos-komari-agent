@@ -19,6 +19,10 @@
       };
 
       checks = forAllSystems (system: {
+        terminal-privileges = import ./tests/terminal-privileges.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+
         module-evaluation =
           let
             evaluated = nixpkgs.lib.nixosSystem {

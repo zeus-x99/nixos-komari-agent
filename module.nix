@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  utils,
   ...
 }:
 
@@ -20,6 +21,12 @@ let
     types
     ;
   cfg = config.services.komari-agent;
+  serviceUser = if cfg.user == null then null else config.users.users.${cfg.user} or null;
+  shell =
+    if serviceUser != null && serviceUser.shell != null then
+      serviceUser.shell
+    else
+      pkgs.bashInteractive;
   optionalArgument =
     name: value:
     optionals (value != null) [
@@ -82,6 +89,29 @@ in
     enable = mkEnableOption "the Komari monitoring agent";
 
     package = mkPackageOption pkgs "komari-agent" { };
+
+    user = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      example = "alice";
+      description = ''
+        Existing user declared in users.users to run the agent and remote
+        commands as. Uses that user's home, group and login shell, and allows
+        writes to their home. Null uses a restricted dynamic user with Bash
+        and /var/lib/komari-agent as its home.
+      '';
+    };
+
+    allowPrivilegeEscalation = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        Remove the service sandbox so remote terminals and commands can use
+        sudo and su according to the selected user's existing permissions.
+        Requires user to be set. Does not grant sudo rights or bypass PAM
+        authentication. Applies to the whole agent, not only its terminals.
+      '';
+    };
 
     endpoint = mkOption {
       type = types.str;
@@ -283,6 +313,14 @@ in
   config = mkIf cfg.enable {
     assertions = [
       {
+        assertion = cfg.user == null || serviceUser != null;
+        message = "services.komari-agent.user must name an existing users.users entry.";
+      }
+      {
+        assertion = !cfg.allowPrivilegeEscalation || cfg.user != null;
+        message = "services.komari-agent.allowPrivilegeEscalation requires an explicit user.";
+      }
+      {
         assertion = cfg.endpoint != "";
         message = "services.komari-agent.endpoint must be set when the service is enabled.";
       }
@@ -318,7 +356,20 @@ in
       wants = [ "network-online.target" ];
       after = [ "network-online.target" ];
       restartTriggers = [ startScript ];
-      environment = optionalAttrs (cfg.hostProc != null) {
+      path = [
+        pkgs.bashInteractive
+      ]
+      ++ optional (serviceUser != null && lib.isDerivation shell) shell
+      ++ optionals (serviceUser != null) [
+        "/run/wrappers"
+        "/etc/profiles/per-user/${cfg.user}"
+        "/run/current-system/sw"
+      ];
+      environment = {
+        HOME = if serviceUser != null then serviceUser.home else "/var/lib/komari-agent";
+        SHELL = utils.toShellPath shell;
+      }
+      // optionalAttrs (cfg.hostProc != null) {
         HOST_PROC = toString cfg.hostProc;
       };
       serviceConfig = {
@@ -331,15 +382,22 @@ in
         StateDirectory = "komari-agent";
         StateDirectoryMode = "0700";
         WorkingDirectory = "/var/lib/komari-agent";
-        DynamicUser = true;
+        DynamicUser = serviceUser == null;
         Restart = "on-failure";
         RestartSec = "5s";
         UMask = "0077";
-        CapabilityBoundingSet = [ "CAP_NET_RAW" ];
         AmbientCapabilities = [ "CAP_NET_RAW" ];
-        NoNewPrivileges = true;
+        NoNewPrivileges = !cfg.allowPrivilegeEscalation;
+        ProtectHome = if serviceUser != null then false else "read-only";
+      }
+      // optionalAttrs (serviceUser != null) {
+        User = cfg.user;
+        Group = serviceUser.group;
+        ReadWritePaths = [ serviceUser.home ];
+      }
+      // optionalAttrs (!cfg.allowPrivilegeEscalation) {
+        CapabilityBoundingSet = [ "CAP_NET_RAW" ];
         PrivateTmp = true;
-        ProtectHome = "read-only";
         ProtectSystem = "strict";
         RestrictAddressFamilies = [
           "AF_UNIX"
