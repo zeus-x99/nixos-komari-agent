@@ -85,6 +85,14 @@ let
   '';
 in
 {
+  imports = [
+    (lib.mkChangedOptionModule
+      [ "services" "komari-agent" "allowPrivilegeEscalation" ]
+      [ "services" "komari-agent" "enableHardening" ]
+      (config: !config.services.komari-agent.allowPrivilegeEscalation)
+    )
+  ];
+
   options.services.komari-agent = {
     enable = mkEnableOption "the Komari monitoring agent";
 
@@ -102,14 +110,16 @@ in
       '';
     };
 
-    allowPrivilegeEscalation = mkOption {
+    enableHardening = mkOption {
       type = types.bool;
-      default = false;
+      default = true;
       description = ''
-        Remove the service sandbox so remote terminals and commands can use
-        sudo and su according to the selected user's existing permissions.
-        Requires user to be set. Does not grant sudo rights or bypass PAM
-        authentication. Applies to the whole agent, not only its terminals.
+        Enable systemd hardening, including privilege escalation prevention,
+        read-only system mounts and syscall restrictions. Set to false to
+        allow remote administration using the selected user's existing sudo
+        and su permissions. Disabling hardening requires user to be set and
+        applies to the whole agent, not only its terminals. It does not grant
+        sudo rights or bypass PAM authentication.
       '';
     };
 
@@ -317,8 +327,8 @@ in
         message = "services.komari-agent.user must name an existing users.users entry.";
       }
       {
-        assertion = !cfg.allowPrivilegeEscalation || cfg.user != null;
-        message = "services.komari-agent.allowPrivilegeEscalation requires an explicit user.";
+        assertion = cfg.enableHardening || cfg.user != null;
+        message = "Disabling services.komari-agent.enableHardening requires an explicit user.";
       }
       {
         assertion = cfg.endpoint != "";
@@ -387,7 +397,7 @@ in
         RestartSec = "5s";
         UMask = "0077";
         AmbientCapabilities = [ "CAP_NET_RAW" ];
-        NoNewPrivileges = !cfg.allowPrivilegeEscalation;
+        NoNewPrivileges = cfg.enableHardening;
         ProtectHome = if serviceUser != null then false else "read-only";
       }
       // optionalAttrs (serviceUser != null) {
@@ -395,7 +405,7 @@ in
         Group = serviceUser.group;
         ReadWritePaths = [ serviceUser.home ];
       }
-      // optionalAttrs (!cfg.allowPrivilegeEscalation) {
+      // optionalAttrs cfg.enableHardening {
         CapabilityBoundingSet = [ "CAP_NET_RAW" ];
         PrivateTmp = true;
         ProtectSystem = "strict";

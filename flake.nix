@@ -19,6 +19,10 @@
       };
 
       checks = forAllSystems (system: {
+        option-compatibility = import ./tests/option-compatibility.nix {
+          inherit nixpkgs system;
+        };
+
         terminal-privileges = import ./tests/terminal-privileges.nix {
           pkgs = nixpkgs.legacyPackages.${system};
         };

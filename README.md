@@ -65,16 +65,21 @@ service sandbox remains active. Traffic data stays in `/var/lib/komari-agent`.
 For system administration through the terminal, also set:
 
 ```nix
-services.komari-agent.allowPrivilegeEscalation = true;
+services.komari-agent.enableHardening = false;
 ```
 
-This requires an explicit `user` and removes the agent's service sandbox,
+`enableHardening` defaults to `true`. Disabling it requires an explicit `user`
+and removes the agent's service sandbox,
 including `NoNewPrivileges`, the capability bounding restriction, read-only
 system mounts and syscall restrictions. The agent still starts as the selected
 user with `CAP_NET_RAW` for ICMP probes. `sudo` and `su` follow the machine's
 existing sudo and PAM policies; this option does not grant sudo rights or
 change passwords. A user with passwordless sudo can obtain root from Komari.
 The relaxed restrictions apply to the whole agent and all its child processes.
+
+The previous `allowPrivilegeEscalation` option is deprecated and still accepted
+with a migration warning. Its value is inverted: `true` becomes
+`enableHardening = false`, and `false` becomes `enableHardening = true`.
 
 ## Options
 
@@ -87,7 +92,7 @@ disableWebSsh ignoreUnsafeCert maxRetries reconnectInterval infoReportInterval
 includeNics excludeNics includeMountpoints monthRotate memoryIncludeCache
 memoryReportRawUsed customDns enableGpu showWarning customIpv4 customIpv6
 getIpAddrFromNic hostProc configFile protocolVersion disableCompression
-preferIpVersion user allowPrivilegeEscalation
+preferIpVersion user enableHardening
 ```
 
 `protocolVersion` defaults to `null`, so the module uses the agent's default

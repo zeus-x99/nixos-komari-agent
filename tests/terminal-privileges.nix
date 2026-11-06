@@ -59,7 +59,7 @@ pkgs.testers.runNixOSTest {
     restricted.services.komari-agent.user = "alice";
     privileged.services.komari-agent = {
       user = "alice";
-      allowPrivilegeEscalation = true;
+      enableHardening = false;
     };
   };
 
